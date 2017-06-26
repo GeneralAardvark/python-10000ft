@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-execfile('tenthousandfeet/version.py')
+exec(compile(open('tenthousandfeet/version.py').read(), 'tenthousandfeet/version.py', 'exec'))
 
 setup(
     name = 'tenthousandfeet',
