@@ -4,6 +4,7 @@ from datetime import date, datetime
 from dateutil.parser import parse as date_parse
 from functools import partial
 import re
+from functools import reduce
 
 
 TEST_URL = 'http://tenthousandfeettest/'
@@ -257,7 +258,7 @@ class CollectionClient(object):
         self.http = http
         self.methods = methods
         
-        for subname, collection in collections.items():
+        for subname, collection in list(collections.items()):
             setattr(self, subname, self.create_sub_collection_factory(subname, collection))
         
         
@@ -295,7 +296,7 @@ class CollectionClient(object):
     def request(self, http_fn, method, path, kwargs):
         self.require_method(method)
         data = self.check_kwargs(method, kwargs)
-        if not isinstance(path, basestring):
+        if not isinstance(path, str):
             path = str(path)
         res = http_fn(path=self.name + '/' + path, data=data)
         return self.get_response(method, res)
@@ -310,13 +311,13 @@ class CollectionClient(object):
     def process_response_data(self, method, data):
         process_rules = self.methods[method].get('process', {})
         if isinstance(data, list):
-            return map(partial(self.process_response_data_item, process_rules), data)
+            return list(map(partial(self.process_response_data_item, process_rules), data))
         else:
             return self.process_response_data_item(process_rules, data)
         
         
     def process_response_data_item(self, process_rules, data):
-        for k,fn in process_rules.items():
+        for k,fn in list(process_rules.items()):
             parts = k.split('.')
             try:
                 value = get_in_dict(data, parts)
@@ -329,7 +330,7 @@ class CollectionClient(object):
         
     def require_method(self, name):
         if name not in self.methods:
-            raise Exception, "%s does not implement %s" % (self.name, name)
+            raise Exception("%s does not implement %s" % (self.name, name))
         
         
     def check_kwargs(self, method, kwargs):
@@ -338,7 +339,7 @@ class CollectionClient(object):
         required = set(method_desc.get('required', []))
         new_kwargs = {}
         
-        for k,v in kwargs.items():
+        for k,v in list(kwargs.items()):
             k = self.underscore_replace_pattern.sub('', k)
             new_kwargs[k] = self.serialize_arg(v)
         
@@ -370,7 +371,7 @@ class TenThousandFeet(object):
     
     def __init__(self, token, endpoint=PROD_URL):
         http = HTTPClient(token, endpoint)
-        for name, desc in collections.items():
+        for name, desc in list(collections.items()):
             setattr(self, name, 
                 CollectionClient(
                     http,
